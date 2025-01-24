@@ -1,10 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Identity.Client;
-using Newtonsoft.Json;
+﻿using Azure;
+using Azure.AI.OpenAI;
+using Azure.Identity;
+using Microsoft.AspNetCore.Mvc;
 using System;
-using System.IO;
-using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace backend.Controllers
@@ -13,124 +11,61 @@ namespace backend.Controllers
     [Route("api/[controller]")]
     public class OpenAiController : ControllerBase
     {
-        private const string TenantId = "YOUR_TENANT_ID"; // Replace with your Tenant ID
-        private const string ClientId = "YOUR_CLIENT_ID"; // Replace with your Client ID
-        private const string ClientSecret = "YOUR_CLIENT_SECRET"; // Replace with your Client Secret
-        private const string ApiKey = "YOUR_API_KEY"; // Replace with your API Key
-        private const string Endpoint = "https://ahmad-m6awwa94-swedencentral.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2024-02-15-preview";
+        private readonly OpenAIClient _client;
 
-        [HttpPost("entra-id-auth")]
-        public async Task<IActionResult> EntraIdAuth([FromForm] IFormFile image, [FromForm] string question)
+        public OpenAiController()
         {
+            string? endpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
+            if (string.IsNullOrEmpty(endpoint))
+                throw new InvalidOperationException("Environment variable 'AZURE_OPENAI_ENDPOINT' is not set.");
+
+            // Use DefaultAzureCredential for Entra ID Authentication
+            _client = new OpenAIClient(new Uri(endpoint), new DefaultAzureCredential());
+
+            // Uncomment below for Key Authentication
+            string? key = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY");
+            if (string.IsNullOrEmpty(key))
+                throw new InvalidOperationException("Environment variable 'AZURE_OPENAI_API_KEY' is not set.");
+            _client = new OpenAIClient(new Uri(endpoint), new AzureKeyCredential(key));
+        }
+
+        [HttpPost("complete")]
+        public async Task<IActionResult> GenerateCompletion([FromBody] CompletionRequest request)
+        {
+            if (string.IsNullOrEmpty(request.Prompt))
+                return BadRequest(new { error = "Prompt cannot be null or empty." });
+
             try
             {
-                // Convert image to Base64
-                string encodedImage = ConvertImageToBase64(image);
-
-                // Acquire token using Entra ID
-                var token = await AcquireToken();
-
-                // Call OpenAI API
-                var result = await CallOpenAiApi(encodedImage, question, token, isApiKey: false);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
-
-        [HttpPost("key-auth")]
-        public async Task<IActionResult> KeyAuth([FromForm] IFormFile image, [FromForm] string question)
-        {
-            try
-            {
-                // Convert image to Base64
-                string encodedImage = ConvertImageToBase64(image);
-
-                // Call OpenAI API with API Key
-                var result = await CallOpenAiApi(encodedImage, question, ApiKey, isApiKey: true);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
-
-        private static string ConvertImageToBase64(IFormFile image)
-        {
-            using (var ms = new MemoryStream())
-            {
-                image.CopyTo(ms);
-                return Convert.ToBase64String(ms.ToArray());
-            }
-        }
-
-        private static async Task<string> AcquireToken()
-        {
-            IConfidentialClientApplication app = ConfidentialClientApplicationBuilder.Create(ClientId)
-                .WithClientSecret(ClientSecret)
-                .WithAuthority(new Uri($"https://login.microsoftonline.com/{TenantId}"))
-                .Build();
-
-            string[] scopes = new string[] { "https://management.azure.com/.default" };
-            AuthenticationResult result = await app.AcquireTokenForClient(scopes).ExecuteAsync();
-            return result.AccessToken;
-        }
-
-        private static async Task<string> CallOpenAiApi(string encodedImage, string question, string authValue, bool isApiKey)
-        {
-            using (var httpClient = new HttpClient())
-            {
-                if (isApiKey)
+                var completionsOptions = new CompletionsOptions
                 {
-                    httpClient.DefaultRequestHeaders.Add("api-key", authValue);
-                }
-                else
-                {
-                    httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {authValue}");
-                }
-
-                var payload = new
-                {
-                    messages = new object[]
-                    {
-                        new
-                        {
-                            role = "system",
-                            content = new[]
-                            {
-                                new { type = "text", text = "You are an AI assistant that helps people find information." }
-                            }
-                        },
-                        new
-                        {
-                            role = "user",
-                            content = new[]
-                            {
-                                new { type = "image_url", image_url = new { url = $"data:image/jpeg;base64,{encodedImage}" } },
-                                new { type = "text", text = question }
-                            }
-                        }
-                    },
-                    temperature = 0.7,
-                    top_p = 0.95,
-                    max_tokens = 800,
-                    stream = false
+                    Prompts = { request.Prompt },
+                    MaxTokens = request.MaxTokens,
+                    Temperature = request.Temperature,
+                    FrequencyPenalty = request.FrequencyPenalty,
+                    PresencePenalty = request.PresencePenalty
                 };
 
-                var response = await httpClient.PostAsync(Endpoint, new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json"));
+                var completionsResponse = await _client.GetCompletionsAsync(request.DeploymentName, completionsOptions);
 
-                if (response.IsSuccessStatusCode)
-                {
-                    return await response.Content.ReadAsStringAsync();
-                }
-                else
-                {
-                    throw new Exception($"Error: {response.StatusCode}, {response.ReasonPhrase}");
-                }
+                string completionText = completionsResponse.Value.Choices[0].Text;
+
+                return Ok(new { completion = completionText });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
             }
         }
+    }
+
+    public class CompletionRequest
+    {
+        public string DeploymentName { get; set; } = "babbage-002";
+        public string Prompt { get; set; } = null!;
+        public int MaxTokens { get; set; } = 100;
+        public float Temperature { get; set; } = 1.0f;
+        public float FrequencyPenalty { get; set; } = 0.0f;
+        public float PresencePenalty { get; set; } = 0.0f;
     }
 }
