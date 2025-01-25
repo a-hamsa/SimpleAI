@@ -2,8 +2,6 @@
 using Azure.AI.OpenAI;
 using Azure.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Threading.Tasks;
 
 namespace backend.Controllers
 {
@@ -24,13 +22,14 @@ namespace backend.Controllers
 
             // Uncomment below for Key Authentication
             string? key = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY");
-            if (string.IsNullOrEmpty(key))
-                throw new InvalidOperationException("Environment variable 'AZURE_OPENAI_API_KEY' is not set.");
-            _client = new OpenAIClient(new Uri(endpoint), new AzureKeyCredential(key));
+            if (!string.IsNullOrEmpty(key))
+            {
+                _client = new OpenAIClient(new Uri(endpoint), new AzureKeyCredential(key));
+            }
         }
 
         [HttpPost("complete")]
-        public async Task<IActionResult> GenerateCompletion([FromBody] CompletionRequest request)
+        public async Task<IActionResult> GenerateCompletion([FromBody] PromptRequest request)
         {
             if (string.IsNullOrEmpty(request.Prompt))
                 return BadRequest(new { error = "Prompt cannot be null or empty." });
@@ -40,13 +39,13 @@ namespace backend.Controllers
                 var completionsOptions = new CompletionsOptions
                 {
                     Prompts = { request.Prompt },
-                    MaxTokens = request.MaxTokens,
-                    Temperature = request.Temperature,
-                    FrequencyPenalty = request.FrequencyPenalty,
-                    PresencePenalty = request.PresencePenalty
+                    MaxTokens = 2000,
+                    Temperature = 1.0f,
+                    FrequencyPenalty = 0.5f,
+                    PresencePenalty = 1.0f
                 };
 
-                var completionsResponse = await _client.GetCompletionsAsync(request.DeploymentName, completionsOptions);
+                var completionsResponse = await _client.GetCompletionsAsync("babbage-002", completionsOptions);
 
                 string completionText = completionsResponse.Value.Choices[0].Text;
 
@@ -59,13 +58,8 @@ namespace backend.Controllers
         }
     }
 
-    public class CompletionRequest
+    public class PromptRequest
     {
-        public string DeploymentName { get; set; } = "babbage-002";
         public string Prompt { get; set; } = null!;
-        public int MaxTokens { get; set; } = 100;
-        public float Temperature { get; set; } = 1.0f;
-        public float FrequencyPenalty { get; set; } = 0.0f;
-        public float PresencePenalty { get; set; } = 0.0f;
     }
 }
