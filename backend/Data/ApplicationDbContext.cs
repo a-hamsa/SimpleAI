@@ -1,24 +1,16 @@
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
+using SimpleAI.Models;
 
 namespace SimpleAI.Data
 {
-    public class ApplicationDbContext : IdentityDbContext<IdentityUser>
+    public class ApplicationDbContext : DbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
         }
 
+        public DbSet<User> Users { get; set; } = null!;
         public DbSet<History> Histories { get; set; } = null!;
-    }
-
-    public class History
-    {
-        public int Id { get; set; }
-        public string UserId { get; set; } = string.Empty;
-        public string Action { get; set; } = string.Empty;
-        public DateTime Timestamp { get; set; }
     }
 }

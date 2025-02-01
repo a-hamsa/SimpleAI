@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.Extensions.Configuration;
+using SimpleAI.Data;
 using SimpleAI.Models;
 
 namespace SimpleAI.Controllers
@@ -13,62 +13,50 @@ namespace SimpleAI.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly UserManager<IdentityUser> _userManager;
-        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
 
-        public AuthController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, IConfiguration configuration)
+        public AuthController(ApplicationDbContext context, IConfiguration configuration)
         {
-            _userManager = userManager;
-            _signInManager = signInManager;
+            _context = context;
             _configuration = configuration;
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterModel model)
         {
-            var user = new IdentityUser { UserName = model.Username, Email = model.Email };
-            var result = await _userManager.CreateAsync(user, model.Password);
+            var user = new User { Username = model.Username, Email = model.Email, Password = model.Password };
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
 
-            if (result.Succeeded)
-            {
-                return Ok(new { Message = "User registered successfully" });
-            }
-
-            return BadRequest(result.Errors);
+            return Ok(new { Message = "User registered successfully" });
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
-            var result = await _signInManager.PasswordSignInAsync(model.Username, model.Password, false, false);
-
-            if (result.Succeeded)
+            var user = await _context.Users.SingleOrDefaultAsync(u => u.Username == model.Username && u.Password == model.Password);
+            if (user == null)
             {
-                var user = await _userManager.FindByNameAsync(model.Username);
-                if (user == null)
-                {
-                    return Unauthorized();
-                }
-                var token = GenerateJwtToken(user);
-                return Ok(new { Token = token });
+                return Unauthorized();
             }
 
-            return Unauthorized();
+            var token = GenerateJwtToken(user);
+            return Ok(new { Token = token });
         }
 
         [HttpPost("logout")]
-        public async Task<IActionResult> Logout()
+        public IActionResult Logout()
         {
-            await _signInManager.SignOutAsync();
+            // Implement logout logic if needed
             return Ok(new { Message = "User logged out successfully" });
         }
 
-        private string GenerateJwtToken(IdentityUser user)
+        private string GenerateJwtToken(User user)
         {
             var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.UserName ?? string.Empty),
+                new Claim(JwtRegisteredClaimNames.Sub, user.Username),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 

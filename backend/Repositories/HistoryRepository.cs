@@ -1,5 +1,6 @@
 using SimpleAI.Data;
 using Microsoft.EntityFrameworkCore;
+using SimpleAI.Models;
 
 namespace SimpleAI.Repositories
 {
