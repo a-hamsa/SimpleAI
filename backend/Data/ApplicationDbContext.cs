@@ -14,3 +14,4 @@ namespace SimpleAI.Data
         public DbSet<History> Histories { get; set; } = null!;
     }
 }
+    
