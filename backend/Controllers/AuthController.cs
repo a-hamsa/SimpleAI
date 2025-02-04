@@ -6,11 +6,13 @@ using System.Security.Claims;
 using System.Text;
 using SimpleAI.Data;
 using SimpleAI.Models;
+using Microsoft.AspNetCore.Cors;
 
 namespace SimpleAI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [EnableCors("AllowReactApp")]
     public class AuthController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
