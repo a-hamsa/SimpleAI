@@ -13,8 +13,13 @@ The project is designed to provide a chatbot interface with user authentication 
 ---
 
 ## Current Features
-- **API Endpoint**:
-  - `api/OpenAi/complete`: An endpoint for interacting with the Azure OpenAI service to generate AI responses.
+- **API Endpoints**:
+  - `api/Auth/login` (POST): User login.
+  - `api/Auth/register` (POST): User registration.
+  - `api/Auth/logout` (POST): User logout.
+  - `api/OpenAi/complete` (POST): AI chatbot response generation.
+  - `api/History` (GET): Retrieve chat history.
+  - `api/History` (DELETE): Delete a chat history entry.
 
 ---
 
@@ -28,7 +33,115 @@ The project is designed to provide a chatbot interface with user authentication 
 - **Tailwind CSS**: Ensures responsive and modern styling.
 
 ### Database
-- **SQL Server**: Stores user authentication and other necessary data.
+- **SQL Server**: Stores user authentication and chat history data.
+
+---
+
+## Database Schema
+### Tables
+
+#### Users Table
+| Column Name | Data Type | Constraints |
+|-------------|-----------|-------------|
+| Id          | int       | Primary Key, Auto-increment |
+| Username    | string    | Unique, Not Null |
+| Password    | string    | Not Null |
+| IsAdmin     | boolean   | Default: false |
+| Email       | string    | Unique, Not Null |
+
+#### History Table
+| Column Name | Data Type | Constraints |
+|-------------|-----------|-------------|
+| Id          | int       | Primary Key, Auto-increment |
+| UserId      | int       | Foreign Key (Users.Id) |
+| Message     | string    | Not Null |
+| Timestamp   | DateTime  | Default: CURRENT_TIMESTAMP |
+
+---
+
+## API Endpoints
+
+### **Authentication**
+#### `api/Auth/login` (POST)
+- **Request Body:**
+  ```json
+  {
+    "username": "string",
+    "password": "string"
+  }
+  ```
+- **Response:**
+  ```json
+  {
+    "token": "token"
+  }
+  ```
+
+#### `api/Auth/register` (POST)
+- **Request Body:**
+  ```json
+  {
+    "username": "string",
+    "email": "string",
+    "password": "string"
+  }
+  ```
+- **Response:**
+  ```json
+  {
+    "message": "The Message"
+  }
+  ```
+
+#### `api/Auth/logout` (POST)
+- **Request Body:** None
+- **Response:**
+  ```json
+  {
+    "message": "The message"
+  }
+  ```
+
+### **Chatbot Interaction**
+#### `api/OpenAi/complete` (POST)
+- **Request Body:**
+  ```json
+  {
+    "prompt": "string"
+  }
+  ```
+- **Response:**
+  ```json
+  {
+    "completion": "The Completion text"
+  }
+  ```
+
+### **Chat History**
+#### `api/History` (GET)
+- **Request Body:** None
+- **Response Example:**
+  ```json
+  [
+    {
+      "message": "Sample message text",
+      "timestamp": "2025-02-02T16:32:52.6533493"
+    },
+    {
+      "message": "Another sample message",
+      "timestamp": "2025-02-05T15:45:11.6019929"
+    }
+  ]
+  ```
+
+#### `api/History` (DELETE)
+- **Request Body:**
+  ```json
+  {
+    "id": "int"
+  }
+  ```
+- **Response:** None
 
 ---
 
@@ -50,6 +163,11 @@ The project is designed to provide a chatbot interface with user authentication 
    - Restore dependencies:
      ```bash
      dotnet restore
+     ```
+   - Create a `.env` file in the backend directory and add:
+     ```env
+     AZURE_OPENAI_API_KEY=your_api_key_here
+     AZURE_OPENAI_ENDPOINT=your_endpoint_here
      ```
    - Run the project:
      ```bash
@@ -80,14 +198,12 @@ The project is designed to provide a chatbot interface with user authentication 
 ## Planned Features
 - **Login Functionality**: Secure authentication and user management.
 - **Enhanced Chatbot Features**: Support for advanced queries and personalized interactions.
-- **Chat History**: Save and retrieve past conversations.
 - **Deployment**: Host the application on a cloud platform.
 
 ---
 
 ## Contributing
 Contributions are welcome! Please create a fork of the repository and submit a pull request with your changes.
-
 
 ---
 
