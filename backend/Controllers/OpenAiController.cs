@@ -63,6 +63,7 @@ namespace backend.Controllers
                     var history = new History
                     {
                         UserId = userId,
+                        Question = request.Prompt,
                         Message = completionText,
                         Timestamp = DateTime.UtcNow
                     };

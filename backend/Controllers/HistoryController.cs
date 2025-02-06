@@ -30,29 +30,53 @@ namespace SimpleAI.Controllers
 
             var histories = await _historyRepository.GetHistoriesAsync();
             var userHistories = histories.Where(h => h.UserId == userId)
-                                         .Select(h => new { h.Message, h.Timestamp });
+                                        .OrderByDescending(h => h.Timestamp)
+                                        .Select(h => new { 
+                                            h.Id, 
+                                            h.Message, 
+                                            h.Question, 
+                                            h.Timestamp,
+                                            Key = $"history-{h.Id}-{h.Timestamp.Ticks}" // Add a guaranteed unique key
+                                        });
 
             return Ok(userHistories);
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         [Authorize]
-        public async Task<IActionResult> DeleteHistory(int id)
+        public async Task<IActionResult> DeleteHistory([FromRoute] int id)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
+            try
             {
-                return Unauthorized();
-            }
+                if (id <= 0)
+                {
+                    return BadRequest(new { message = "Invalid history ID" });
+                }
 
-            var history = await _historyRepository.GetHistoryByIdAsync(id);
-            if (history == null || history.UserId != userId)
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new { message = "User not authenticated" });
+                }
+
+                var history = await _historyRepository.GetHistoryByIdAsync(id);
+                if (history == null)
+                {
+                    return NotFound(new { message = "History not found" });
+                }
+
+                if (history.UserId != userId)
+                {
+                    return Forbid();
+                }
+
+                await _historyRepository.DeleteHistoryAsync(id);
+                return NoContent();
+            }
+            catch (Exception ex)
             {
-                return NotFound();
+                return BadRequest(new { message = ex.Message });
             }
-
-            await _historyRepository.DeleteHistoryAsync(id);
-            return NoContent();
         }
     }
 }
