@@ -9,6 +9,7 @@ function Chat() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [selectedHistory, setSelectedHistory] = useState(null);
+  const [historyTrigger, setHistoryTrigger] = useState(0);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -35,12 +36,13 @@ function Chat() {
       <Sidebar
         onHistoryClick={(history) => setSelectedHistory(history)}
         onChatClick={() => setSelectedHistory(null)}
+        historyTrigger={historyTrigger}
       />
       <div className="flex-1">
         {selectedHistory ? (
           <History history={selectedHistory} />
         ) : (
-          <Bot />
+          <Bot onNewMessage={() => setHistoryTrigger(prev => prev + 1)} />
         )}
       </div>
     </div>

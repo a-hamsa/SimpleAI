@@ -36,7 +36,7 @@ namespace SimpleAI.Controllers
                                             h.Message, 
                                             h.Question, 
                                             h.Timestamp,
-                                            Key = $"history-{h.Id}-{h.Timestamp.Ticks}" // Add a guaranteed unique key
+                                            h.Key
                                         });
 
             return Ok(userHistories);

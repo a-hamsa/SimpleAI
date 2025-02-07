@@ -18,6 +18,22 @@ const Bot = ({ onNewMessage }) => {
     scrollToBottom();
   }, [messages]);
 
+  const formatBotResponse = (text) => {
+    const lines = text.split(/(?:\r?\n|\s{2,})/);
+    return lines
+      .filter(line => line.trim())
+      .map(line => {
+        if (line.match(/^https?:\/\//i)) {
+          return `<a href="${line}" target="_blank" class="text-blue-500 hover:underline">${line}</a>`;
+        }
+        if (line.match(/^\d+[\.\)]/)) {
+          return `<strong>${line}</strong>`;
+        }
+        return line;
+      })
+      .join('<br />');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -32,8 +48,15 @@ const Bot = ({ onNewMessage }) => {
         prompt: userMessage
       });
       
-      setMessages(prev => [...prev, { type: 'bot', content: response.data.completion }]);
-      onNewMessage();
+      const formattedResponse = formatBotResponse(response.data.completion);
+      setMessages(prev => [...prev, { 
+        type: 'bot', 
+        content: formattedResponse,
+        isHtml: true 
+      }]);
+      if (onNewMessage) {
+        onNewMessage();
+      }
     } catch (error) {
       console.error('Error:', error);
       setMessages(prev => [...prev, { type: 'error', content: 'Sorry, there was an error processing your request.' }]);
@@ -66,9 +89,13 @@ const Bot = ({ onNewMessage }) => {
                 message.type === 'user'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-200 text-black'
-              }`}
+              } whitespace-pre-wrap`}
             >
-              {message.content}
+              {message.isHtml ? (
+                <div dangerouslySetInnerHTML={{ __html: message.content }} />
+              ) : (
+                message.content
+              )}
             </div>
           </div>
         ))}
