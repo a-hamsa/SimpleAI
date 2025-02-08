@@ -6,6 +6,7 @@ import Chat from './pages/Chat'
 
 import './App.css'
 import 'tailwindcss/tailwind.css'
+import Register from './pages/Register'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -15,6 +16,7 @@ function App() {
       <Routes>
         <Route path="/" exact element={<Index />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/chat" element={<Chat />} />
       </Routes>
     </Router>
