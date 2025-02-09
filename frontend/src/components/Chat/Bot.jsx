@@ -66,9 +66,9 @@ const Bot = ({ onNewMessage }) => {
   };
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen p-4 w-full">
       <div 
-        className="flex-1 overflow-y-auto flex flex-col-reverse p-4"
+        className="flex-1 overflow-y-auto flex flex-col-reverse"
         style={{ scrollbarWidth: 'thin' }}
       >
         <div ref={messagesEndRef} />

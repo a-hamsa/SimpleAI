@@ -2,9 +2,9 @@ import React from 'react';
 
 const History = ({ history }) => {
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen p-4">
       <div 
-        className="flex-1 overflow-y-auto flex flex-col-reverse p-4"
+        className="flex-1 overflow-y-auto flex flex-col-reverse"
         style={{ scrollbarWidth: 'thin' }}
       >
         <div className="mb-4 text-right">

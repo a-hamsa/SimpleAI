@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import HistoryButton from './HistoryButton';
 import Swal from 'sweetalert2';
+import { FaTimes } from 'react-icons/fa';
 
-const Sidebar = ({ onHistoryClick, onChatClick, historyTrigger }) => {
+const Sidebar = ({ onHistoryClick, onChatClick, historyTrigger, onClose }) => {
   const [histories, setHistories] = useState([]);
   const navigate = useNavigate();
 
@@ -85,14 +86,19 @@ const Sidebar = ({ onHistoryClick, onChatClick, historyTrigger }) => {
   };
 
   return (
-    <div className="w-64 h-screen bg-gray-800 text-white p-4 flex flex-col">
+    <div className="w-64 h-screen bg-gray-800 text-white p-4 flex flex-col md:relative fixed top-0 left-0 z-10 md:z-auto sidebar">
+      <button
+        onClick={onClose}
+        className="md:hidden p-2 bg-red-600 rounded hover:bg-red-700 absolute top-1 ml-[241px]"
+      >
+        <FaTimes />
+      </button>
       <button
         onClick={onChatClick}
         className="mb-4 p-2 bg-blue-600 rounded hover:bg-blue-700"
       >
         New Chat
       </button>
-      
       <div className="flex-1 overflow-y-auto">
         {histories.map((history) => (
           <HistoryButton
@@ -103,7 +109,6 @@ const Sidebar = ({ onHistoryClick, onChatClick, historyTrigger }) => {
           />
         ))}
       </div>
-
       <button
         onClick={handleLogout}
         className="mt-4 p-2 bg-red-600 rounded hover:bg-red-700"
