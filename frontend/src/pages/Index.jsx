@@ -1,29 +1,44 @@
-import React from "react";
-import Header from "../components/Landing/Header";
+import React, { useState, useEffect } from "react";
 import About from "../components/Landing/About";
 import Features from "../components/Landing/Features";
 import GetStarted from "../components/Landing/GetStarted";
 import Footer from "../components/Landing/Footer";
-import { Link } from 'react-router-dom'
+import Carousel from "../components/Landing/Carousel";
+import { Link } from 'react-router-dom';
 
 function Index() {
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 0);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   return (
     <>
-      <nav className="bg-gray-800 p-4">
-        <ul className="flex space-x-4">
+      <nav className={`fixed top-0 w-full p-4 shadow-lg transition-all duration-300 z-50 ${isScrolled ? 'bg-opacity-70 bg-gray-900' : 'bg-gradient-to-r from-purple-500 to-blue-500'}`}>
+        <ul className="flex justify-between">
           <li>
-            <Link to="/" className="text-white">Home</Link>
+            <Link to="/" className="text-white hover:text-yellow-300">Home</Link>
           </li>
-          <li>
-            <Link to="/login" className="text-white">Login</Link>
+          <li className="ml-auto">
+            <Link to="/login" className="text-white hover:text-yellow-300">Login</Link>
           </li>
         </ul>
       </nav>
-      <Header />
-      <main className="p-4">
-        <About />
-        <Features />
-        <GetStarted />
+      <main className="pt-16 p-4">
+        <Carousel />
+        <section className="my-8">
+          <About />
+          <Features />
+          <GetStarted />
+        </section>
       </main>
       <Footer />
     </>
