@@ -196,8 +196,9 @@ The project is designed to provide a chatbot interface with user authentication 
 ---
 
 ## Planned Features
-- **Login Functionality**: Secure authentication and user management.
-- **Enhanced Chatbot Features**: Support for advanced queries and personalized interactions.
+- **Login, Logout and Register Functionality**: Secure authentication and user management. ✓
+- **Chatbot Features**: Support one time queries only. ✓
+- **Show and Delete History**: Show the recently queries and able to delete the history. ✓
 - **Deployment**: Host the application on a cloud platform.
 
 ---
